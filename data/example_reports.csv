@@ -1,0 +1,6 @@
+report_id,source_name,source_family,language,published_at,url,text,location,actors,event_type
+demo-001,Example News A,wire-a,en,2026-01-10,https://example.org/a,"A fictional report says an airstrike damaged a hospital in Example City on 2026-01-09. This is synthetic test text, not a real event.",Example City,unknown,airstrike
+demo-002,Example News B,wire-b,uk,2026-01-10,https://example.org/b,"Умовне повідомлення: авіаудар пошкодив лікарню у вигаданому місті 2026-01-09. Це синтетичний тестовий текст.",Example City,unknown,airstrike
+demo-003,Example News C,wire-a,en,2026-01-11,https://example.org/c,"A fictional report says people were displaced after shelling near Example Town. Synthetic fixture only.",Example Town,unknown,shelling
+demo-004,Example News D,wire-d,ar,2026-01-11,https://example.org/d,"تقرير افتراضي: حدث نزوح بعد قصف قرب مدينة خيالية. هذا نص تجريبي اصطناعي فقط.",Example Town,unknown,shelling
+demo-005,Example News E,wire-e,ru,2026-01-12,https://example.org/e,"Вымышленное сообщение: после обстрела возле условного города люди были вынуждены покинуть дома. Только синтетический пример.",Example Town,unknown,shelling
