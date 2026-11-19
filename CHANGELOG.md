@@ -4,6 +4,8 @@
 
 - `civintel ru22fact-neural` and `notebooks/kaggle_xlmr.ipynb`: fine-tune `xlm-roberta-base` on claim
   and evidence pairs, three seeds, on raw and on artefact-removed evidence (Kaggle GPU).
+- `notebooks/kaggle_me5.ipynb`: the same experiment with a second encoder, `intfloat/multilingual-e5-base`.
+- Notebooks clone the repository under its new name, `multilingual-factcheck-artefacts`.
 
 ## 0.3.0 (2026-11-19)
 
