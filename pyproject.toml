@@ -4,18 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "civintel-agentbench"
-version = "0.1.0"
-description = "A reproducible benchmark for multilingual, evidence-grounded agentic conflict-event intelligence."
+version = "0.2.0"
+description = "Multilingual evidence-grounded claim verification and conflict-report analysis with abstention."
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
-authors = [{name = "CivIntel-AgentBench Research Team"}]
+authors = [{name = "Muzammal Hussain"}]
 dependencies = [
   "pandas>=1.5,<3.0",
   "numpy>=1.23,<3.0",
-  "scikit-learn>=1.1,<2.0",
-  "requests>=2.28,<3.0",
-  "PyYAML>=6.0,<7.0"
+  "scikit-learn>=1.1,<2.0"
 ]
 
 [project.optional-dependencies]

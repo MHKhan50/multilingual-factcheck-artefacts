@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below, and cite RU22Fact (Zeng et al., 2024) for the data."
+title: "CivIntel-AgentBench: multilingual evidence-grounded claim verification and conflict-report analysis"
+type: software
+authors:
+  - family-names: Hussain
+    given-names: Muzammal
+    affiliation: "Independent researcher, Glasgow, United Kingdom"
+    orcid: "https://orcid.org/0009-0001-2570-5686"
+version: 0.2.0
+date-released: 2026-11-19
+license: MIT
+repository-code: "https://github.com/MHKhan50/CivIntel-AgentBench"
+keywords:
+  - fact-checking
+  - multilingual
+  - claim verification
+  - selective prediction
+  - RU22Fact
+references:
+  - type: conference-paper
+    title: "RU22Fact: Optimizing Evidence for Multilingual Explainable Fact-Checking on Russia-Ukraine Conflict"
+    authors:
+      - family-names: Zeng
+        given-names: Yirong
+      - name: "et al."
+    collection-title: "Proceedings of LREC-COLING 2024"
+    year: 2024
+    start: 14215
+    end: 14226
+    url: "https://aclanthology.org/2024.lrec-main.1239"

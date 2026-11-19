@@ -27,7 +27,38 @@ def build_parser() -> argparse.ArgumentParser:
     inspect.add_argument("--input", required=True)
     inspect.add_argument("--output", required=True)
     inspect.add_argument("--top-k", type=int, default=3)
+
+    dl = subparsers.add_parser("ru22fact-download", help="Download RU22Fact from its pinned commit and verify it.")
+    dl.add_argument("--data-dir", default="data/raw/ru22fact")
+
+    verify = subparsers.add_parser("ru22fact-verify", help="Claim-verification baselines on RU22Fact.")
+    verify.add_argument("--data-dir", default="data/raw/ru22fact")
+    verify.add_argument("--output", default="reports/ru22fact")
+    verify.add_argument("--seed", type=int, default=0)
+    verify.add_argument("--bootstrap", type=int, default=1000)
     return parser
+
+
+def run_ru22fact(data_dir: str, output: str, seed: int, bootstrap: int) -> dict:
+    from . import __version__
+    from .ru22fact import COMMIT, REPOSITORY, load
+    from .utils import environment_info, utc_now, write_json
+    from .verification import results_table, run_verification
+
+    data = load(data_dir)
+    results = run_verification(data, seed=seed, bootstrap=bootstrap)
+    out = Path(output)
+    write_json(out / "results.json", results)
+    (out / "results.md").write_text(
+        "# RU22Fact claim-verification baselines\n\nTest split, macro-F1 over Supported, Refuted and NEI; "
+        "per language over the labels present (Ukrainian and Russian have no NEI claims); "
+        "95% bootstrap interval over claims.\n\n" + results_table(results) + "\n", encoding="utf-8")
+    write_json(out / "run_manifest.json", {
+        "package_version": __version__, "created_utc": utc_now(), "seed": seed,
+        "dataset": REPOSITORY, "dataset_commit": COMMIT,
+        "dropped_malformed_rows": data.attrs.get("dropped_malformed", 0), **environment_info(),
+    })
+    return {"output": str(out), "test_macro_f1": {k: results[k]["macro_f1"] for k in ("majority", "claim", "evidence", "claim+evidence")}}
 
 
 def main() -> None:
@@ -37,6 +68,12 @@ def main() -> None:
         result = run_pipeline(input_path, args.output)
     elif args.command == "evaluate":
         result = run_pipeline(args.input, args.output, args.top_k, args.labels)
+    elif args.command == "ru22fact-download":
+        from .ru22fact import download
+
+        result = {"data_dir": args.data_dir, "sha256": download(args.data_dir)}
+    elif args.command == "ru22fact-verify":
+        result = run_ru22fact(args.data_dir, args.output, args.seed, args.bootstrap)
     else:
         result = run_pipeline(args.input, args.output, args.top_k)
     print(json.dumps(result, ensure_ascii=False, indent=2))
