@@ -36,6 +36,16 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--output", default="reports/ru22fact")
     verify.add_argument("--seed", type=int, default=0)
     verify.add_argument("--bootstrap", type=int, default=1000)
+
+    neural = subparsers.add_parser("ru22fact-neural", help="Fine-tune XLM-R on raw and artefact-removed evidence (GPU).")
+    neural.add_argument("--data-dir", default="data/raw/ru22fact")
+    neural.add_argument("--output", default="reports/ru22fact-neural")
+    neural.add_argument("--model", default="xlm-roberta-base")
+    neural.add_argument("--seeds", default="0,1,2")
+    neural.add_argument("--variants", default="raw,cleaned")
+    neural.add_argument("--max-len", type=int, default=256)
+    neural.add_argument("--epochs", type=int, default=3)
+    neural.add_argument("--limit", type=int, default=None, help="Claims per label and split, for a quick smoke run.")
     return parser
 
 
@@ -72,6 +82,13 @@ def main() -> None:
         from .ru22fact import download
 
         result = {"data_dir": args.data_dir, "sha256": download(args.data_dir)}
+    elif args.command == "ru22fact-neural":
+        from .neural import run_neural
+        from .ru22fact import load
+
+        result = run_neural(load(args.data_dir), args.output, seeds=[int(x) for x in args.seeds.split(",")],
+                            variants=args.variants.split(","), model_name=args.model, max_len=args.max_len,
+                            epochs=args.epochs, limit=args.limit)
     elif args.command == "ru22fact-verify":
         result = run_ru22fact(args.data_dir, args.output, args.seed, args.bootstrap)
     else:

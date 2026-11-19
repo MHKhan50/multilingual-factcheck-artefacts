@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- `civintel ru22fact-neural` and `notebooks/kaggle_xlmr.ipynb`: fine-tune `xlm-roberta-base` on claim
+  and evidence pairs, three seeds, on raw and on artefact-removed evidence (Kaggle GPU).
+
 ## 0.3.0 (2026-11-19)
 
 - Artefact control: evidence and format-only models refitted after removing search-engine sentences,

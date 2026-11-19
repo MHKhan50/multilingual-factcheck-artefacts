@@ -101,3 +101,21 @@ def test_verdict_cue_rates_per_language_and_label():
     rates = verdict_cue_rates(data)
     assert rates["en"] == {"Supported": 0.0, "Refuted": 1.0}
     assert rates["uk"]["Refuted"] == 1.0
+
+
+def test_neural_helpers_without_torch():
+    from civintel_agentbench.neural import class_weights, prepare, summarise
+
+    data = toy()
+    data.loc[0, "evidence"] = "Hello, this is Bing. Real text."
+    assert "Bing" not in prepare(data, "cleaned").loc[0, "evidence"]
+    assert prepare(data, "raw").loc[0, "evidence"].startswith("Hello")
+    with pytest.raises(ValueError):
+        prepare(data, "other")
+    w = class_weights(pd.Series(["Supported"] * 8 + ["Refuted"] * 2 + ["NEI"] * 1))
+    assert w[0] < w[1] < w[2] and abs(w.mean() - 1.0) < 1e-9
+    runs = [{"variant": "raw", "seed": s, "minutes": 1.0,
+             "test": {"macro_f1": f, "per_language": {"en": {"macro_f1": f}}}} for s, f in ((0, 0.5), (1, 0.7))]
+    out = summarise(runs)
+    assert out["raw"]["macro_f1"]["mean"] == pytest.approx(0.6)
+    assert out["raw"]["per_language"]["en"]["std"] == pytest.approx(0.1414, abs=1e-3)
