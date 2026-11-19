@@ -31,23 +31,18 @@
 
 \begin{abstract}
 \noindent
-RU22Fact is a multilingual fact-checking dataset of 16,033 claims about the Russia--Ukraine conflict in English,
-Ukrainian, Russian and Chinese, in which each claim comes with evidence that a large language model retrieved from
-the web and summarised. We ask how much of a verifier's score on this dataset comes from reading the evidence and
-how much from how the evidence looks. With transparent character n-gram models scored on the official test split
-(3,215 claims), claim and evidence together reach macro-F1 0.679 against 0.268 for the majority class. A classifier
-that sees no words, only six features of the evidence's format (a search-engine greeting, \code{[1]} citation
-markers, list numbering, length and character shares), reaches 0.591, which is 79\% of that gain. In Russian, 95\%
-of Supported but 12\% of Refuted evidence contains the search engine's greeting; in English, 83\% of Supported and
-13\% of Refuted evidence starts with a citation marker; in Ukrainian the median Supported evidence is 107 characters
-long and the median Refuted evidence 2,830. Removing these marks takes the format-only score down to 0.396, yet the
-evidence model keeps 0.678, because the evidence also states the verdict: 77.5\% of Refuted Ukrainian evidence
-contains a debunking word, against 0.6\% of Supported. Fine-tuned multilingual encoders behave the same way:
-XLM-R and multilingual-E5 reach 0.689 and 0.701 (three seeds each), keep 0.691 and 0.697 after artefact removal, and
-score 0.997--1.000 on Ukrainian and Russian. Scores of 0.99 on Ukrainian and Russian therefore measure
-reading a verdict that is already in the evidence, not verifying a claim. We release the code, which downloads the
-data from a pinned commit and checks it, and propose that evaluations on LLM-built evidence report format-only and
-artefact-removed baselines.
+RU22Fact pairs 16,033 claims about the Russia--Ukraine conflict in English, Ukrainian, Russian and Chinese with
+evidence that a large language model retrieved from the web and summarised. On the official test split, character n-gram
+models reach macro-F1 0.679 with claim and evidence, against 0.268 for the majority class; a classifier that sees no
+words, only six format features, reaches 0.591, or 79\% of that gain. The marks differ by label: a search-engine
+greeting in 95\% of Supported but 12\% of Refuted Russian evidence, and Ukrainian evidence of median length 107
+characters for Supported but 2,830 for Refuted claims. Removing the marks and then deleting every verdict word
+(\textit{false}, \textit{fake}, \ldots) leaves the scores unchanged: 0.989 on Ukrainian for character n-grams and
+1.000 for fine-tuned XLM-R, whose overall score is 0.683. XLM-R and multilingual-E5 reach 0.997--1.000 on
+Ukrainian and Russian with or without the marks. The label is carried by what kind of text the evidence is, a full
+debunking article or a short news lead, so near-perfect scores measure recognising the genre, not verifying the
+claim. We release code that rebuilds every number from the pinned data and propose format-only, artefact-removed
+and verdict-masked baselines for evaluations on LLM-built evidence.
 \end{abstract}
 
 \section{Introduction}
@@ -64,8 +59,8 @@ evidence itself is produced by a tool, the tool's habits can leave marks that di
 claims is formatted differently from evidence for false ones, a model can read the format instead of the content.
 
 We measure this on RU22Fact. Our questions are: (1) How much of the label can be predicted from the evidence's format
-alone? (2) Does removing the format marks reduce the score of a model that reads the evidence? (3) Does the evidence
-state the verdict? (4) How do these effects differ across the four languages? The models are deliberately simple
+alone? (2) Does removing the format marks reduce the score of a model that reads the evidence? (3) Do models rely on the
+verdict words in the evidence? (4) How do these effects differ across the four languages? The models are deliberately simple
 and transparent, because the point is to audit the data, not to propose a verifier.
 
 \section{Related work}
@@ -112,6 +107,8 @@ difference.
 \paragraph{Verdict words.} For each language, a short list of words with which fact-checkers state a verdict
 (for example \textit{false}, \textit{misleading} and \textit{no evidence} in English, \textit{fake},
 \textit{untrue} and \textit{refuted} in Ukrainian and Russian), and the share of evidence texts containing one.
+To test whether models rely on these words, we also delete every word that contains one (in Chinese, the cue itself)
+from the artefact-removed evidence and refit the lexical models and XLM-R on this verdict-masked evidence.
 
 \paragraph{Metrics.} Macro-F1 over the three labels is the main metric because NEI is rare; per language it is taken
 over the labels present. Test intervals are 95\% percentile bootstrap intervals over claims (1,000 resamples). For
@@ -167,17 +164,20 @@ Figure~\ref{fig:lang} shows the result per language.
 only the first 300 characters. It therefore also learns from the content. In Ukrainian the probe stays at 0.944 even
 after truncation, because the short Supported texts are still shorter than 300 characters.
 
-\paragraph{The evidence states the verdict.} In Ukrainian, 77.5\% of Refuted evidence contains a debunking word,
-against 0.6\% of Supported evidence; the Refuted evidence reads like the fact-check article itself, the Supported
-evidence like a short news lead. The gap is smaller elsewhere: 29.8\% against 5.9\% in Russian, 28.6\% against 5.2\% in
-English and 9.4\% against 3.7\% in Chinese. Near-perfect scores in Ukrainian and Russian (0.989 and 0.995) thus come
-from evidence that already announces the verdict and from format, not from comparing the claim with independent
-evidence.
+\paragraph{Verdict words are present but are not what the models use.} In Ukrainian, 77.5\% of Refuted evidence
+contains a debunking word, against 0.6\% of Supported evidence; the gap is smaller elsewhere (29.8\% against 5.9\% in
+Russian, 28.6\% against 5.2\% in English, 9.4\% against 3.7\% in Chinese). Deleting these words, however, changes
+nothing: on artefact-removed and verdict-masked evidence the character n-gram evidence model scores 0.684 overall
+(0.678 before masking), 0.989 on Ukrainian and 0.976 on Russian, and fine-tuned XLM-R scores 0.683 overall and
+1.000 and 0.993 on Ukrainian and Russian (Table~\ref{tab:neural}). What remains is the kind of text: Refuted
+Ukrainian evidence reads like the fact-check article itself, Supported evidence like a short news lead, and their
+lengths differ twentyfold. Near-perfect scores in Ukrainian and Russian therefore come from recognising the genre and
+format of the evidence, not from comparing the claim with independent evidence.
 
 \begin{table}[t]
 \centering\small
 \caption{Fine-tuned encoders on claim and evidence: test macro-F1, mean $\pm$ SD over three seeds, and per language
-(mean). Artefact removal as in Table~\ref{tab:main}.}
+(mean). Artefact removal as in Table~\ref{tab:main}; verdict words deleted as in Section~3.}
 \label{tab:neural}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{llccccc}
@@ -186,6 +186,7 @@ Model & Evidence & Overall & en & uk & ru & zh \\
 \midrule
 XLM-R base & raw & 0.689 $\pm$ 0.003 & 0.643 & 1.000 & 0.997 & 0.676 \\
  & artefacts removed & 0.691 $\pm$ 0.005 & 0.644 & 0.999 & 0.997 & 0.700 \\
+ & \quad and verdict words deleted & 0.683 $\pm$ 0.004 & 0.633 & 1.000 & 0.993 & 0.669 \\
 multilingual-E5 base & raw & 0.701 $\pm$ 0.008 & 0.652 & 0.999 & 0.999 & 0.709 \\
  & artefacts removed & 0.697 $\pm$ 0.008 & 0.647 & 0.999 & 0.997 & 0.710 \\
 \bottomrule
@@ -195,8 +196,8 @@ multilingual-E5 base & raw & 0.701 $\pm$ 0.008 & 0.652 & 0.999 & 0.999 & 0.709 \
 \paragraph{Neural encoders show the same picture.} Fine-tuned XLM-R and multilingual-E5 reach 0.689 and 0.701,
 only one to two points above the character n-gram model (Table~\ref{tab:neural}). Artefact removal changes neither
 score by more than the seed spread, and both encoders stay at 0.997--1.000 on Ukrainian and Russian. Larger models
-therefore do not reduce the dependence on the evidence's verdict; they read it at least as well. English and Chinese,
-where the evidence states the verdict far less often, stay at 0.63--0.71 for every model.
+therefore do not reduce the dependence on what kind of text the evidence is; they recognise it at least as well.
+English and Chinese, where Supported and Refuted evidence look more alike, stay at 0.63--0.71 for every model.
 
 \paragraph{Claims carry cues too.} The claim alone reaches 0.614, far above the majority class, as on FEVER
 \citep{schuster2019debiasing}. In Russian the claim alone reaches 0.950.
@@ -216,27 +217,28 @@ built transparently. Its evidence, however, was not written independently of the
 and citation style differ between claims later labelled true and false, and for Ukrainian the evidence for false claims
 is often the debunking text. A verifier evaluated on it can score highly without verifying anything. This does not
 make the dataset unusable; it means that results on it need controls. We suggest three: report a format-only
-baseline, report scores after removing tool artefacts, and check whether the evidence contains verdict words. All
-three are cheap and run on a laptop.
+baseline, report scores after removing tool artefacts, and check whether scores survive deleting the verdict words.
+All three are cheap; the lexical versions run on a laptop.
 
-For conflict-related claims in particular, a system that appears accurate because it reads the debunker's conclusion
+For conflict-related claims in particular, a system that appears accurate because it recognises a debunking article
 would fail exactly where it is needed: on new claims for which no fact-check exists yet.
 
 \section{Limitations}
 
 Besides the lexical models we test two base-size encoders; larger models and LLM agents that retrieve their own
 evidence may use the cues to a different degree, which we have not measured. The artefact removal targets the marks we found and cannot remove all format or
-verdict signal. The verdict-word lists are short and hand-made; they show a difference between labels, not its full
-size. We rely on the released labels and do not re-verify any claim. Ukrainian and Russian have no NEI claims, so
+verdict signal. The verdict-word lists are short and hand-made; masking them removes the listed words but not every way of stating
+a verdict, so it bounds rather than removes the verdict signal. We did not equalise evidence length or genre, which
+is what remains. We rely on the released labels and do not re-verify any claim. Ukrainian and Russian have no NEI claims, so
 their scores are not comparable with English and Chinese. Lexical results come from one fit; their bootstrap intervals cover sampling of test claims, not training
 variation. The encoder results use three seeds, which bounds training variation but gives no test-sampling interval.
 
 \section{Conclusion}
 
 On RU22Fact, a classifier that reads no words of the evidence reaches 79\% of the gain of a classifier that reads
-claim and evidence, and removing the format marks shows that the evidence also states the verdict, above all in
-Ukrainian. Fine-tuned multilingual encoders reach the same near-perfect Ukrainian and Russian scores with or without
-the format marks. Evaluations of fact-checkers on LLM-built evidence should report format-only and artefact-removed
+claim and evidence. Removing the format marks and deleting the verdict words leaves the scores unchanged: in
+Ukrainian and Russian the label is carried by whether the evidence is a debunking article or a news lead, and
+fine-tuned multilingual encoders recognise this as well as character n-grams. Evaluations of fact-checkers on LLM-built evidence should report format-only and artefact-removed
 baselines alongside their main scores.
 
 \section*{Code and data availability}

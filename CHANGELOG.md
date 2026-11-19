@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0 (2026-11-19)
+
+- Verdict-word masking control (`mask_verdict_words`, `run_masked_control`, neural variant `cleaned_masked`, `notebooks/kaggle_masked.ipynb`): deleting the verdict words leaves the scores unchanged (character n-gram evidence 0.684, XLM-R 0.683 ± 0.004; Ukrainian 0.989 and 1.000). Results in `results/ru22fact-masked/` and `results/ru22fact-neural/xlmr-masked/`.
+- Paper: the verdict-word finding is restated with this evidence (the label is carried by the kind of text, not by the verdict words); abstract shortened; limitations updated.
+
 ## 0.4.0 (2026-11-19)
 
 - Fine-tuned XLM-R base and multilingual-E5 base on claim and evidence, three seeds each, on raw and artefact-removed evidence (Kaggle T4). Results in `results/ru22fact-neural/` and in the README; both encoders keep their scores after artefact removal and reach 0.997-1.000 on Ukrainian and Russian.

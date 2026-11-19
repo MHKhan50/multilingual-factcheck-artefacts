@@ -10,7 +10,7 @@ evidence in English, Ukrainian, Russian and Chinese, when they should abstain, a
 the evidence or shortcuts in it. It does not decide whether an event happened, attribute legal
 responsibility, or replace professional fact-checking and investigation.
 
-## Results on RU22Fact (v0.4.0)
+## Results on RU22Fact (v0.5.0)
 
 Paper: [*Reading the Format, Not the Facts: Artefacts in LLM-Optimised Evidence Inflate Multilingual
 Fact-Checking Scores*](paper/main.pdf).
@@ -43,6 +43,7 @@ learning rate 2e-5, class-weighted loss, epoch chosen on validation macro-F1). O
 | XLM-R base | artefacts removed | 0.691 ± 0.005 | 0.644 | 0.999 | 0.997 | 0.700 |
 | multilingual-E5 base | raw | 0.701 ± 0.008 | 0.652 | 0.999 | 0.999 | 0.709 |
 | multilingual-E5 base | artefacts removed | 0.697 ± 0.008 | 0.647 | 0.999 | 0.997 | 0.710 |
+| XLM-R base | artefacts removed, verdict words deleted | 0.683 ± 0.004 | 0.633 | 1.000 | 0.993 | 0.669 |
 
 **Findings.**
 
@@ -55,10 +56,12 @@ learning rate 2e-5, class-weighted loss, epoch chosen on validation macro-F1). O
    against 2,830 for Refuted.
 2. **Removing the marks removes the format signal, not the score.** After artefact removal the
    format-only probe falls to 0.396, but the evidence model keeps 0.678.
-3. **The evidence states the verdict.** 77.5% of Refuted Ukrainian evidence contains a debunking
-   word, against 0.6% of Supported evidence (Russian 29.8% against 5.9%, English 28.6% against 5.2%).
-   Scores of 0.99 on Ukrainian and Russian measure reading a verdict that is already in the
-   evidence, not verifying a claim.
+3. **Verdict words are present but are not what the models use.** 77.5% of Refuted Ukrainian evidence
+   contains a debunking word, against 0.6% of Supported evidence, but deleting these words changes
+   nothing: the character n-gram evidence model keeps 0.684 (Ukrainian 0.989) and XLM-R keeps 0.683
+   (Ukrainian 1.000, Russian 0.993). The label is carried by the kind of text, a full debunking article
+   against a short news lead, not by the verdict words. Full numbers: `results/ru22fact-masked/` and
+   `results/ru22fact-neural/xlmr-masked/`.
 4. **Claims carry cues too** (claim alone: 0.614), **NEI is the hard class** (F1 0.262), and
    answering only the most confident half of the claims raises accuracy from 0.859 to 0.981.
 5. **Lexical models do not transfer across scripts:** trained on English only, the model scores
@@ -67,7 +70,7 @@ learning rate 2e-5, class-weighted loss, epoch chosen on validation macro-F1). O
    keep their scores after artefact removal, and score 0.997-1.000 on Ukrainian and Russian.
 
 Evaluations on LLM-built evidence should report a format-only baseline, scores after artefact
-removal, and a verdict-word check. Next: tool-using agents that retrieve their own evidence, on the
+removal, and scores after deleting verdict words. Next: tool-using agents that retrieve their own evidence, on the
 same protocol.
 
 Full numbers: [`results/ru22fact-v0.3.0/`](results/ru22fact-v0.3.0/).

@@ -1,0 +1,23 @@
+[
+  {
+    "variant": "cleaned_masked",
+    "seed": 0,
+    "best_epoch": 3,
+    "minutes": 9.7,
+    "test_macro_f1": 0.6784
+  },
+  {
+    "variant": "cleaned_masked",
+    "seed": 1,
+    "best_epoch": 3,
+    "minutes": 9.9,
+    "test_macro_f1": 0.6872
+  },
+  {
+    "variant": "cleaned_masked",
+    "seed": 2,
+    "best_epoch": 3,
+    "minutes": 9.7,
+    "test_macro_f1": 0.6847
+  }
+]
