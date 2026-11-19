@@ -42,7 +42,9 @@ of Supported but 12\% of Refuted evidence contains the search engine's greeting;
 13\% of Refuted evidence starts with a citation marker; in Ukrainian the median Supported evidence is 107 characters
 long and the median Refuted evidence 2,830. Removing these marks takes the format-only score down to 0.396, yet the
 evidence model keeps 0.678, because the evidence also states the verdict: 77.5\% of Refuted Ukrainian evidence
-contains a debunking word, against 0.6\% of Supported. Scores of 0.99 on Ukrainian and Russian therefore measure
+contains a debunking word, against 0.6\% of Supported. Fine-tuned multilingual encoders behave the same way:
+XLM-R and multilingual-E5 reach 0.689 and 0.701 (three seeds each), keep 0.691 and 0.697 after artefact removal, and
+score 0.997--1.000 on Ukrainian and Russian. Scores of 0.99 on Ukrainian and Russian therefore measure
 reading a verdict that is already in the evidence, not verifying a claim. We release the code, which downloads the
 data from a pinned commit and checks it, and propose that evaluations on LLM-built evidence report format-only and
 artefact-removed baselines.
@@ -70,7 +72,10 @@ and transparent, because the point is to audit the data, not to propose a verifi
 
 Hypothesis-only and claim-only baselines are the standard tool for finding label cues in one input
 \citep{poliak2018hypothesis,gururangan2018annotation,schuster2019debiasing}. Our format-only probe applies the same
-idea to the evidence, with features that carry no words at all. X-FACT \citep{gupta2021xfact} introduced multilingual
+idea to the evidence, with features that carry no words at all. AVeriTeC \citep{schlichtkrull2023averitec} shows the
+other side of the problem: it collects evidence through question answering on the open web and removes evidence
+published after the claim, to avoid temporal leakage, whereas RU22Fact's evidence was retrieved and summarised by a
+model after the fact-checks existed. X-FACT \citep{gupta2021xfact} introduced multilingual
 fact-checking with zero-shot transfer across languages; we report transfer from English for comparison. Selective
 classification \citep{geifman2017selective} lets a model abstain on its least confident inputs; we report
 risk-coverage results because a verifier for conflict claims should be able to say it does not know.
@@ -87,6 +92,12 @@ The reference explanation states the verdict and is never used as input.
 \paragraph{Models.} For each input (claim, evidence, claim and evidence) we fit a character 2--5-gram TF-IDF model with
 class-balanced logistic regression, choose $C \in \{0.3, 1, 3\}$ on validation macro-F1 and score the test split once.
 Character n-grams work for all four scripts without language-specific tools.
+
+\paragraph{Neural encoders.} To test whether the findings hold beyond lexical models, we fine-tune two multilingual
+encoders on claim--evidence pairs: XLM-R base \citep{conneau2020xlmr} and multilingual-E5 base
+\citep{wang2024me5}, a retrieval-tuned encoder of the same size. Inputs are claim--evidence pairs of at most 256 tokens, with the evidence truncated; training uses AdamW with learning rate $2\times10^{-5}$, batch size 32, 3 epochs, class-weighted cross-entropy
+and mixed precision on one T4 GPU. The epoch with the best validation macro-F1 is scored on test. Each model is
+trained with three seeds on raw evidence and on artefact-removed evidence, and we report mean and standard deviation.
 
 \paragraph{Format-only probe.} A logistic regression on six features of the evidence that contain no words: whether it
 mentions the search engine (Bing, whose greeting appears in many evidence texts), whether it starts with a
@@ -163,6 +174,30 @@ English and 9.4\% against 3.7\% in Chinese. Near-perfect scores in Ukrainian and
 from evidence that already announces the verdict and from format, not from comparing the claim with independent
 evidence.
 
+\begin{table}[t]
+\centering\small
+\caption{Fine-tuned encoders on claim and evidence: test macro-F1, mean $\pm$ SD over three seeds, and per language
+(mean). Artefact removal as in Table~\ref{tab:main}.}
+\label{tab:neural}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llccccc}
+\toprule
+Model & Evidence & Overall & en & uk & ru & zh \\
+\midrule
+XLM-R base & raw & 0.689 $\pm$ 0.003 & 0.643 & 1.000 & 0.997 & 0.676 \\
+ & artefacts removed & 0.691 $\pm$ 0.005 & 0.644 & 0.999 & 0.997 & 0.700 \\
+multilingual-E5 base & raw & 0.701 $\pm$ 0.008 & 0.652 & 0.999 & 0.999 & 0.709 \\
+ & artefacts removed & 0.697 $\pm$ 0.008 & 0.647 & 0.999 & 0.997 & 0.710 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Neural encoders show the same picture.} Fine-tuned XLM-R and multilingual-E5 reach 0.689 and 0.701,
+only one to two points above the character n-gram model (Table~\ref{tab:neural}). Artefact removal changes neither
+score by more than the seed spread, and both encoders stay at 0.997--1.000 on Ukrainian and Russian. Larger models
+therefore do not reduce the dependence on the evidence's verdict; they read it at least as well. English and Chinese,
+where the evidence states the verdict far less often, stay at 0.63--0.71 for every model.
+
 \paragraph{Claims carry cues too.} The claim alone reaches 0.614, far above the majority class, as on FEVER
 \citep{schuster2019debiasing}. In Russian the claim alone reaches 0.950.
 
@@ -189,27 +224,29 @@ would fail exactly where it is needed: on new claims for which no fact-check exi
 
 \section{Limitations}
 
-The models are lexical baselines; multilingual neural encoders and LLM agents may use the same cues to a different
-degree, which we have not measured. The artefact removal targets the marks we found and cannot remove all format or
+Besides the lexical models we test two base-size encoders; larger models and LLM agents that retrieve their own
+evidence may use the cues to a different degree, which we have not measured. The artefact removal targets the marks we found and cannot remove all format or
 verdict signal. The verdict-word lists are short and hand-made; they show a difference between labels, not its full
 size. We rely on the released labels and do not re-verify any claim. Ukrainian and Russian have no NEI claims, so
-their scores are not comparable with English and Chinese. Results come from one seed; the bootstrap intervals cover
-sampling of test claims, not training variation.
+their scores are not comparable with English and Chinese. Lexical results come from one fit; their bootstrap intervals cover sampling of test claims, not training
+variation. The encoder results use three seeds, which bounds training variation but gives no test-sampling interval.
 
 \section{Conclusion}
 
 On RU22Fact, a classifier that reads no words of the evidence reaches 79\% of the gain of a classifier that reads
 claim and evidence, and removing the format marks shows that the evidence also states the verdict, above all in
-Ukrainian. Evaluations of fact-checkers on LLM-built evidence should report format-only and artefact-removed
+Ukrainian. Fine-tuned multilingual encoders reach the same near-perfect Ukrainian and Russian scores with or without
+the format marks. Evaluations of fact-checkers on LLM-built evidence should report format-only and artefact-removed
 baselines alongside their main scores.
 
 \section*{Code and data availability}
 
-Code, tests and the archived results are at \url{https://github.com/MHKhan50/CivIntel-AgentBench} (software:
+Code, tests and the archived results are at \url{https://github.com/MHKhan50/multilingual-factcheck-artefacts} (software:
 \href{https://doi.org/10.5281/zenodo.24370943}{doi:10.5281/zenodo.24370943}). The data are not redistributed:
 \code{civintel ru22fact-download} fetches them from the authors' repository at a pinned commit and checks their
 SHA-256 digests, and \code{civintel ru22fact-verify} reproduces every number in this paper in about 15 minutes on a
-laptop CPU.
+laptop CPU. \code{civintel ru22fact-neural} and the notebooks \code{notebooks/kaggle\_xlmr.ipynb} and
+\code{notebooks/kaggle\_me5.ipynb} reproduce the encoder results on a free Kaggle T4 GPU (about 1 hour per model).
 
 \bibliographystyle{plainnat}
 \bibliography{references}

@@ -7,10 +7,10 @@ authors:
     given-names: Muzammal
     affiliation: "Independent researcher, Glasgow, United Kingdom"
     orcid: "https://orcid.org/0009-0001-2570-5686"
-version: 0.3.0
+version: 0.4.0
 date-released: 2026-11-19
 license: MIT
-repository-code: "https://github.com/MHKhan50/CivIntel-AgentBench"
+repository-code: "https://github.com/MHKhan50/multilingual-factcheck-artefacts"
 keywords:
   - fact-checking
   - multilingual

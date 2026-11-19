@@ -1,6 +1,6 @@
-# CivIntel-AgentBench
+# Multilingual fact-check artefacts (CivIntel-AgentBench)
 
-[![tests](https://github.com/MHKhan50/CivIntel-AgentBench/actions/workflows/tests.yml/badge.svg)](https://github.com/MHKhan50/CivIntel-AgentBench/actions/workflows/tests.yml)
+[![tests](https://github.com/MHKhan50/multilingual-factcheck-artefacts/actions/workflows/tests.yml/badge.svg)](https://github.com/MHKhan50/multilingual-factcheck-artefacts/actions/workflows/tests.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24370943.svg)](https://doi.org/10.5281/zenodo.24370943)
 
 **Multilingual evidence-grounded claim verification and conflict-report analysis, with abstention.**
@@ -10,7 +10,7 @@ evidence in English, Ukrainian, Russian and Chinese, when they should abstain, a
 the evidence or shortcuts in it. It does not decide whether an event happened, attribute legal
 responsibility, or replace professional fact-checking and investigation.
 
-## Results on RU22Fact (v0.3.0)
+## Results on RU22Fact (v0.4.0)
 
 Paper: [*Reading the Format, Not the Facts: Artefacts in LLM-Optimised Evidence Inflate Multilingual
 Fact-Checking Scores*](paper/main.pdf).
@@ -34,6 +34,16 @@ present (Ukrainian and Russian have no NEI claims); 95% bootstrap intervals over
 | format only, evidence, artefacts removed, first 300 characters | 0.357 | | 0.046 | 0.939 | 0.463 | 0.096 | |
 | claim+evidence, trained on English only | | | 0.641 | 0.236 | 0.927 | 0.503 | |
 
+Fine-tuned multilingual encoders on claim and evidence (Kaggle T4 GPU, three seeds each; 256 tokens, 3 epochs,
+learning rate 2e-5, class-weighted loss, epoch chosen on validation macro-F1). Outputs: `results/ru22fact-neural/`.
+
+| Model | Evidence | Test macro-F1, mean ± SD | en | uk | ru | zh |
+|---|---|---|---|---|---|---|
+| XLM-R base | raw | 0.689 ± 0.003 | 0.643 | 1.000 | 0.997 | 0.676 |
+| XLM-R base | artefacts removed | 0.691 ± 0.005 | 0.644 | 0.999 | 0.997 | 0.700 |
+| multilingual-E5 base | raw | 0.701 ± 0.008 | 0.652 | 0.999 | 0.999 | 0.709 |
+| multilingual-E5 base | artefacts removed | 0.697 ± 0.008 | 0.647 | 0.999 | 0.997 | 0.710 |
+
 **Findings.**
 
 1. **The format predicts the label.** A classifier that reads no words of the evidence, only six
@@ -53,9 +63,11 @@ present (Ukrainian and Russian have no NEI claims); 95% bootstrap intervals over
    answering only the most confident half of the claims raises accuracy from 0.859 to 0.981.
 5. **Lexical models do not transfer across scripts:** trained on English only, the model scores
    0.236 on Ukrainian; the higher Russian score (0.927) comes from shared format marks.
+6. **Neural encoders show the same picture.** XLM-R and multilingual-E5 reach 0.689 and 0.701,
+   keep their scores after artefact removal, and score 0.997-1.000 on Ukrainian and Russian.
 
 Evaluations on LLM-built evidence should report a format-only baseline, scores after artefact
-removal, and a verdict-word check. Next: multilingual neural encoders and tool-using agents on the
+removal, and a verdict-word check. Next: tool-using agents that retrieve their own evidence, on the
 same protocol.
 
 Full numbers: [`results/ru22fact-v0.3.0/`](results/ru22fact-v0.3.0/).

@@ -1,7 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 (2026-11-19)
 
+- Fine-tuned XLM-R base and multilingual-E5 base on claim and evidence, three seeds each, on raw and artefact-removed evidence (Kaggle T4). Results in `results/ru22fact-neural/` and in the README; both encoders keep their scores after artefact removal and reach 0.997-1.000 on Ukrainian and Russian.
+- Paper: encoder section and table, AVeriTeC in related work, updated limitations, repository renamed to `multilingual-factcheck-artefacts`.
+- Notebooks stored without outputs.
 - `civintel ru22fact-neural` and `notebooks/kaggle_xlmr.ipynb`: fine-tune `xlm-roberta-base` on claim
   and evidence pairs, three seeds, on raw and on artefact-removed evidence (Kaggle GPU).
 - `notebooks/kaggle_me5.ipynb`: the same experiment with a second encoder, `intfloat/multilingual-e5-base`.
