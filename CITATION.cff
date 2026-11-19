@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below, and cite RU22Fact (Zeng et al., 2024) for the data."
-title: "CivIntel-AgentBench: multilingual evidence-grounded claim verification and conflict-report analysis"
+title: "Multilingual fact-check artefacts (CivIntel-AgentBench): format and verdict artefacts in LLM-built fact-checking evidence"
 type: software
 authors:
   - family-names: Hussain
@@ -8,6 +8,7 @@ authors:
     affiliation: "Independent researcher, Glasgow, United Kingdom"
     orcid: "https://orcid.org/0009-0001-2570-5686"
 version: 0.4.0
+doi: 10.5281/zenodo.24370943
 date-released: 2026-11-19
 license: MIT
 repository-code: "https://github.com/MHKhan50/multilingual-factcheck-artefacts"
