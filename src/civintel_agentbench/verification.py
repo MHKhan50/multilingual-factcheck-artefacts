@@ -268,6 +268,42 @@ VERDICT_CUES = {
 }
 
 
+def mask_verdict_words(text: str, lang: str) -> str:
+    """Delete every word that contains a verdict cue of the claim's language (Chinese: the cue itself)."""
+    pattern = VERDICT_CUES.get(lang)
+    if pattern is None:
+        return str(text)
+    core = pattern.replace(r"\b", "")
+    if lang != "zh":
+        core = r"\w*" + core + r"\w*"
+    return re.sub(r"\s+", " ", re.sub(core, " ", str(text), flags=re.IGNORECASE)).strip()
+
+
+def masked_evidence(data: pd.DataFrame) -> pd.Series:
+    """Artefact-removed evidence with the verdict words of each claim's language deleted."""
+    return pd.Series([mask_verdict_words(clean_evidence(t), lang) for t, lang in zip(data["evidence"], data["lang"])],
+                     index=data.index)
+
+
+def run_masked_control(data: pd.DataFrame, seed: int = 0, bootstrap: int = 1000) -> dict:
+    """Lexical models on artefact-removed evidence with and without verdict words (C fixed at 1.0)."""
+    out = {}
+    for name in ("cleaned", "cleaned_masked"):
+        frame = data.copy()
+        frame["evidence"] = masked_evidence(frame) if name == "cleaned_masked" else frame["evidence"].map(clean_evidence)
+        train = frame[frame["split"] == "train"]
+        test = frame[frame["split"] == "test"]
+        out[name] = {}
+        for key in ("evidence", "claim+evidence"):
+            text = INPUTS[key]
+            pred = make_model(1.0, seed).fit(text(train), train["label"]).predict(text(test))
+            out[name][key] = {"macro_f1": macro_f1(test["label"], pred),
+                              "macro_f1_ci95": bootstrap_ci(test["label"], pred, n=bootstrap, seed=seed),
+                              "per_language": per_language(test, pred)}
+        out[name]["verdict_cue_rates"] = verdict_cue_rates(frame[frame["split"] == "test"])
+    return out
+
+
 def verdict_cue_rates(data: pd.DataFrame) -> dict:
     """Share of evidence texts per language and label that contain a verdict word."""
     out = {}

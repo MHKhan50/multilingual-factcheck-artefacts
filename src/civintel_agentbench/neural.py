@@ -14,9 +14,9 @@ import numpy as np
 import pandas as pd
 
 from .ru22fact import LABELS
-from .verification import bootstrap_ci, clean_evidence, macro_f1, per_language, risk_coverage
+from .verification import bootstrap_ci, clean_evidence, macro_f1, masked_evidence, per_language, risk_coverage
 
-VARIANTS = ("raw", "cleaned")
+VARIANTS = ("raw", "cleaned", "cleaned_masked")
 
 
 def prepare(data: pd.DataFrame, variant: str) -> pd.DataFrame:
@@ -25,6 +25,8 @@ def prepare(data: pd.DataFrame, variant: str) -> pd.DataFrame:
     out = data.copy()
     if variant == "cleaned":
         out["evidence"] = out["evidence"].map(clean_evidence)
+    elif variant == "cleaned_masked":
+        out["evidence"] = masked_evidence(out)
     return out
 
 

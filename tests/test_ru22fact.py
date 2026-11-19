@@ -119,3 +119,13 @@ def test_neural_helpers_without_torch():
     out = summarise(runs)
     assert out["raw"]["macro_f1"]["mean"] == pytest.approx(0.6)
     assert out["raw"]["per_language"]["en"]["std"] == pytest.approx(0.1414, abs=1e-3)
+
+
+def test_mask_verdict_words():
+    from civintel_agentbench.verification import mask_verdict_words
+    assert mask_verdict_words("This claim is false and misleading, says the fact-check.", "en") == \
+        "This claim is and , says the ."
+    assert "фейк" not in mask_verdict_words("Це фейкова новина, її спростовано.", "uk")
+    assert "спростов" not in mask_verdict_words("Це фейкова новина, її спростовано.", "uk")
+    assert mask_verdict_words("这是谣言。", "zh") == "这是 。"
+    assert mask_verdict_words("No cue here.", "xx") == "No cue here."
