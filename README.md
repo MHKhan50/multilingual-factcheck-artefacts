@@ -1,6 +1,7 @@
 # CivIntel-AgentBench
 
 [![tests](https://github.com/MHKhan50/CivIntel-AgentBench/actions/workflows/tests.yml/badge.svg)](https://github.com/MHKhan50/CivIntel-AgentBench/actions/workflows/tests.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24370943.svg)](https://doi.org/10.5281/zenodo.24370943)
 
 **Multilingual evidence-grounded claim verification and conflict-report analysis, with abstention.**
 
@@ -9,7 +10,10 @@ evidence in English, Ukrainian, Russian and Chinese, when they should abstain, a
 the evidence or shortcuts in it. It does not decide whether an event happened, attribute legal
 responsibility, or replace professional fact-checking and investigation.
 
-## v0.2.0 results on RU22Fact
+## Results on RU22Fact (v0.3.0)
+
+Paper: [*Reading the Format, Not the Facts: Artefacts in LLM-Optimised Evidence Inflate Multilingual
+Fact-Checking Scores*](paper/main.pdf).
 
 Data: RU22Fact (Zeng et al., LREC-COLING 2024), 16,031 claims after dropping two malformed rows, with
 the dataset's own splits (test: 1,741 English, 704 Ukrainian, 465 Russian and 305 Chinese claims).
@@ -17,48 +21,44 @@ Models: character n-gram TF-IDF with class-balanced logistic regression, regular
 validation, test scored once. Macro-F1 over Supported, Refuted and NEI; per language over the labels
 present (Ukrainian and Russian have no NEI claims); 95% bootstrap intervals over claims.
 
-| Model input | Test macro-F1 [95% CI] | Accuracy | en | uk | ru | zh | Accuracy at 50% coverage |
+| Input | Test macro-F1 [95% CI] | Accuracy | en | uk | ru | zh | Accuracy at 50% coverage |
 |---|---|---|---|---|---|---|---|
 | Majority (Supported) | 0.268 | 0.674 | | | | | |
 | claim | 0.614 [0.594, 0.633] | 0.779 | 0.584 | 0.868 | 0.950 | 0.572 | 0.905 |
 | evidence | 0.677 [0.655, 0.696] | 0.858 | 0.631 | 0.989 | 0.995 | 0.696 | 0.980 |
 | claim+evidence | 0.679 [0.659, 0.698] | 0.859 | 0.631 | 0.989 | 0.995 | 0.713 | 0.981 |
 | evidence format only (no words) | 0.591 [0.574, 0.609] | 0.761 | 0.543 | 0.944 | 0.931 | 0.352 | |
+| evidence, artefacts removed | 0.678 [0.657, 0.696] | | 0.630 | 0.989 | 0.971 | 0.710 | |
+| format only, evidence, artefacts removed | 0.396 | | 0.117 | 0.944 | 0.493 | 0.330 | |
+| evidence, artefacts removed, first 300 characters | 0.636 [0.618, 0.655] | | 0.581 | 0.970 | 0.931 | 0.685 | |
+| format only, evidence, artefacts removed, first 300 characters | 0.357 | | 0.046 | 0.939 | 0.463 | 0.096 | |
 | claim+evidence, trained on English only | | | 0.641 | 0.236 | 0.927 | 0.503 | |
 
 **Findings.**
 
-1. **The evidence carries most of the signal, but much of it is format, not content.** A classifier
-   that sees no words, only how the LLM-written evidence is formatted (a search-engine greeting,
-   "[1]" citation markers, list style, length and character shares), reaches macro-F1 0.591, which
-   is 79% of the gain of the full claim-and-evidence model over the majority baseline.
-   In Russian, 95% of Supported but
-   12% of Refuted evidence contains a search-engine
-   greeting ("this is Bing"); in English, 83% of Supported and
-   13% of Refuted evidence starts with "[1]"; in
-   Ukrainian the median Supported evidence is 107 characters
-   long against 2830 for Refuted.
-   In Ukrainian and Russian the format alone reaches macro-F1
-   0.944 and 0.931,
-   close to the full model (0.989 and
-   0.995).
-   Scores on RU22Fact therefore overstate how well a model verifies claims.
-2. **The claim alone already reaches macro-F1 0.614**, far above the majority
-   baseline (0.268), so claims also carry label cues.
-3. **NEI is the hard class** (F1 0.262 with claim and
-   evidence).
-4. **Abstention helps:** answering only the most confident half of the test claims raises accuracy
-   from 0.859 to
-   0.981.
+1. **The format predicts the label.** A classifier that reads no words of the evidence, only six
+   format features (a search-engine greeting, "[1]" citation markers, list numbering, length,
+   character shares), reaches macro-F1 0.591, which is 79% of the gain of the claim-and-evidence
+   model (0.679) over the majority class (0.268). In Russian, 95% of Supported but 12% of Refuted
+   evidence contains the search engine's greeting; in English, 83% of Supported and 13% of Refuted
+   evidence starts with "[1]"; in Ukrainian the median Supported evidence is 107 characters long
+   against 2,830 for Refuted.
+2. **Removing the marks removes the format signal, not the score.** After artefact removal the
+   format-only probe falls to 0.396, but the evidence model keeps 0.678.
+3. **The evidence states the verdict.** 77.5% of Refuted Ukrainian evidence contains a debunking
+   word, against 0.6% of Supported evidence (Russian 29.8% against 5.9%, English 28.6% against 5.2%).
+   Scores of 0.99 on Ukrainian and Russian measure reading a verdict that is already in the
+   evidence, not verifying a claim.
+4. **Claims carry cues too** (claim alone: 0.614), **NEI is the hard class** (F1 0.262), and
+   answering only the most confident half of the claims raises accuracy from 0.859 to 0.981.
 5. **Lexical models do not transfer across scripts:** trained on English only, the model scores
-   0.236 on Ukrainian; the higher
-   Russian score comes from the format cues above, not from understanding Russian.
+   0.236 on Ukrainian; the higher Russian score (0.927) comes from shared format marks.
 
-These are transparent baselines and an audit of the data, not a new verification model. Next:
-multilingual neural encoders, artefact-controlled evaluation (evidence normalised to one format),
-and tool-using agents that retrieve and cite evidence, evaluated on the same protocol.
+Evaluations on LLM-built evidence should report a format-only baseline, scores after artefact
+removal, and a verdict-word check. Next: multilingual neural encoders and tool-using agents on the
+same protocol.
 
-Full numbers: [`results/ru22fact-v0.2.0/`](results/ru22fact-v0.2.0/).
+Full numbers: [`results/ru22fact-v0.3.0/`](results/ru22fact-v0.3.0/).
 
 ## Quick start (macOS or Linux, Python 3.9+)
 
@@ -69,7 +69,7 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 pytest -q
 civintel ru22fact-download            # fetches RU22Fact from its pinned commit, checks SHA-256
-civintel ru22fact-verify --output reports/ru22fact   # about 10 minutes on a laptop CPU
+civintel ru22fact-verify --output reports/ru22fact   # about 15 minutes on a laptop CPU
 ```
 
 RU22Fact is not redistributed here: its repository has no licence file, so the download command
@@ -98,10 +98,12 @@ civintel evaluate --input data/example_reports.csv --output reports/evaluation
 ```text
 src/civintel_agentbench/
   ru22fact.py       download, checksum verification and loading of RU22Fact
-  verification.py   baselines, bootstrap intervals, risk-coverage, transfer, format probe
+  verification.py   baselines, bootstrap intervals, risk-coverage, transfer, format probe,
+                    artefact removal, verdict-word rates
   cli.py            civintel command
   pipeline.py, retrieval.py, extraction.py, agents.py, evaluation.py, io.py   v0.1.0 pipeline
-results/ru22fact-v0.2.0/   results.json, results.md, run_manifest.json
+results/ru22fact-v0.3.0/   results.json, results.md, run_manifest.json
+paper/                     main.tex, main.pdf, references.bib, make_figure.py
 docs/                      METHODOLOGY.md, DATA_SOURCES.md, ETHICS.md
 tests/
 ```

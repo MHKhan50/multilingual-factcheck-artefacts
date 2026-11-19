@@ -1,6 +1,6 @@
 {
-  "package_version": "0.2.0",
-  "created_utc": "2026-11-19T13:42:56.474111+00:00",
+  "package_version": "0.3.0",
+  "created_utc": "2026-11-19T14:16:08.734651+00:00",
   "seed": 0,
   "dataset": "https://github.com/zeng-yirong/ru22fact",
   "dataset_commit": "c467abb1c98bd4fc043ac0fd5a03c4f1afa109d0",

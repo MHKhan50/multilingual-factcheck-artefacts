@@ -78,3 +78,26 @@ def test_per_language_macro_f1_uses_only_labels_present():
     out = per_language(test, ["Supported", "Refuted"])
     assert out["uk"]["labels"] == ["Supported", "Refuted"]
     assert out["uk"]["macro_f1"] == pytest.approx(1.0)
+
+
+def test_clean_evidence_removes_markers_and_search_greeting():
+    from civintel_agentbench.verification import clean_evidence
+
+    text = '[1]: "Headline"[2]: "Other" Hello, this is Bing. **Real** content here.'
+    out = clean_evidence(text)
+    assert "Bing" not in out and "[1]" not in out and "**" not in out
+    assert out.endswith("content here.")
+    assert len(clean_evidence("x" * 500, 300)) == 300
+
+
+def test_verdict_cue_rates_per_language_and_label():
+    from civintel_agentbench.verification import verdict_cue_rates
+
+    data = pd.DataFrame({
+        "lang": ["en", "en", "uk", "uk"],
+        "label": ["Refuted", "Supported", "Refuted", "Supported"],
+        "evidence": ["This is false.", "It happened.", "Це фейк.", "Новина."],
+    })
+    rates = verdict_cue_rates(data)
+    assert rates["en"] == {"Supported": 0.0, "Refuted": 1.0}
+    assert rates["uk"]["Refuted"] == 1.0

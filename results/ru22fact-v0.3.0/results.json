@@ -352,5 +352,296 @@
         }
       }
     }
+  },
+  "artefact_control": {
+    "raw": {
+      "median_chars": 1674,
+      "evidence_macro_f1": 0.6765199685451112,
+      "evidence_macro_f1_ci95": [
+        0.6553733181147161,
+        0.6958940065942703
+      ],
+      "evidence_per_language": {
+        "en": {
+          "n": 1741,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.6307383933231065,
+          "accuracy": 0.7817346352670879
+        },
+        "ru": {
+          "n": 465,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.9948161093329668,
+          "accuracy": 0.9956989247311828
+        },
+        "uk": {
+          "n": 704,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.9892758390541572,
+          "accuracy": 0.9801136363636364
+        },
+        "zh": {
+          "n": 305,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.6959212376933896,
+          "accuracy": 0.8032786885245902
+        }
+      },
+      "format_only_macro_f1": 0.5911487517972022,
+      "format_only_per_language": {
+        "en": {
+          "n": 1741,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.5427566555903021,
+          "accuracy": 0.7059161401493395
+        },
+        "ru": {
+          "n": 465,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.9305512848671206,
+          "accuracy": 0.9634408602150538
+        },
+        "uk": {
+          "n": 704,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.943929529613355,
+          "accuracy": 0.9502840909090909
+        },
+        "zh": {
+          "n": 305,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.35151540290913114,
+          "accuracy": 0.33114754098360655
+        }
+      }
+    },
+    "cleaned": {
+      "median_chars": 1541,
+      "evidence_macro_f1": 0.6777295376364957,
+      "evidence_macro_f1_ci95": [
+        0.6567566048049526,
+        0.696413946297522
+      ],
+      "evidence_per_language": {
+        "en": {
+          "n": 1741,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.629812076841154,
+          "accuracy": 0.7805858701895463
+        },
+        "ru": {
+          "n": 465,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.9710727852601215,
+          "accuracy": 0.9849462365591398
+        },
+        "uk": {
+          "n": 704,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.9892758390541572,
+          "accuracy": 0.9801136363636364
+        },
+        "zh": {
+          "n": 305,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.7101367285861026,
+          "accuracy": 0.8032786885245902
+        }
+      },
+      "format_only_macro_f1": 0.39632519778150815,
+      "format_only_per_language": {
+        "en": {
+          "n": 1741,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.11710261077229789,
+          "accuracy": 0.10281447443997703
+        },
+        "ru": {
+          "n": 465,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.49335016689438094,
+          "accuracy": 0.864516129032258
+        },
+        "uk": {
+          "n": 704,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.943929529613355,
+          "accuracy": 0.9502840909090909
+        },
+        "zh": {
+          "n": 305,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.3297402333480323,
+          "accuracy": 0.31475409836065577
+        }
+      }
+    },
+    "cleaned_first_300": {
+      "median_chars": 300,
+      "evidence_macro_f1": 0.6364585161460161,
+      "evidence_macro_f1_ci95": [
+        0.6175663332434816,
+        0.6550838868850549
+      ],
+      "evidence_per_language": {
+        "en": {
+          "n": 1741,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.5806491471886392,
+          "accuracy": 0.7375071797817346
+        },
+        "ru": {
+          "n": 465,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.9307984060684622,
+          "accuracy": 0.9591397849462365
+        },
+        "uk": {
+          "n": 704,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.9701146976314762,
+          "accuracy": 0.9588068181818182
+        },
+        "zh": {
+          "n": 305,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.6846087291907725,
+          "accuracy": 0.7737704918032787
+        }
+      },
+      "format_only_macro_f1": 0.3568237203674474,
+      "format_only_per_language": {
+        "en": {
+          "n": 1741,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.04618707935356466,
+          "accuracy": 0.06950028719126938
+        },
+        "ru": {
+          "n": 465,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.4630484988452656,
+          "accuracy": 0.8623655913978494
+        },
+        "uk": {
+          "n": 704,
+          "labels": [
+            "Supported",
+            "Refuted"
+          ],
+          "macro_f1": 0.9393186045456607,
+          "accuracy": 0.9460227272727273
+        },
+        "zh": {
+          "n": 305,
+          "labels": [
+            "Supported",
+            "Refuted",
+            "NEI"
+          ],
+          "macro_f1": 0.0962916835493206,
+          "accuracy": 0.13442622950819672
+        }
+      }
+    }
+  },
+  "verdict_cues": {
+    "en": {
+      "Supported": 0.052,
+      "Refuted": 0.286,
+      "NEI": 0.136
+    },
+    "uk": {
+      "Supported": 0.006,
+      "Refuted": 0.775,
+      "NEI": 0.196
+    },
+    "ru": {
+      "Supported": 0.059,
+      "Refuted": 0.298,
+      "NEI": 0.092
+    },
+    "zh": {
+      "Supported": 0.037,
+      "Refuted": 0.094,
+      "NEI": 0.08
+    }
   }
 }

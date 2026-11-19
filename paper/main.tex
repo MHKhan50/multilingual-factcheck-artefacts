@@ -1,0 +1,217 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage{courier}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={Reading the Format, Not the Facts: Artefacts in LLM-Optimised Evidence Inflate Multilingual Fact-Checking Scores},pdfauthor={Muzammal Hussain}}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\setlength{\emergencystretch}{3em}
+
+\title{\textbf{Reading the Format, Not the Facts:\\Artefacts in LLM-Optimised Evidence Inflate\\Multilingual Fact-Checking Scores}}
+\author{Muzammal Hussain\\
+\small Independent researcher, Glasgow, United Kingdom\\
+\small \href{mailto:muzammal@masmatixinnovations.co.uk}{muzammal@masmatixinnovations.co.uk}\\
+\small ORCID: \href{https://orcid.org/0009-0001-2570-5686}{0009-0001-2570-5686}}
+\date{\small November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+RU22Fact is a multilingual fact-checking dataset of 16,033 claims about the Russia--Ukraine conflict in English,
+Ukrainian, Russian and Chinese, in which each claim comes with evidence that a large language model retrieved from
+the web and summarised. We ask how much of a verifier's score on this dataset comes from reading the evidence and
+how much from how the evidence looks. With transparent character n-gram models scored on the official test split
+(3,215 claims), claim and evidence together reach macro-F1 0.679 against 0.268 for the majority class. A classifier
+that sees no words, only six features of the evidence's format (a search-engine greeting, \code{[1]} citation
+markers, list numbering, length and character shares), reaches 0.591, which is 79\% of that gain. In Russian, 95\%
+of Supported but 12\% of Refuted evidence contains the search engine's greeting; in English, 83\% of Supported and
+13\% of Refuted evidence starts with a citation marker; in Ukrainian the median Supported evidence is 107 characters
+long and the median Refuted evidence 2,830. Removing these marks takes the format-only score down to 0.396, yet the
+evidence model keeps 0.678, because the evidence also states the verdict: 77.5\% of Refuted Ukrainian evidence
+contains a debunking word, against 0.6\% of Supported. Scores of 0.99 on Ukrainian and Russian therefore measure
+reading a verdict that is already in the evidence, not verifying a claim. We release the code, which downloads the
+data from a pinned commit and checks it, and propose that evaluations on LLM-built evidence report format-only and
+artefact-removed baselines.
+\end{abstract}
+
+\section{Introduction}
+
+Automated fact-checking is usually framed as deciding whether evidence supports or refutes a claim
+\citep{thorne2018fever}. Evidence is expensive to collect, and recent datasets use large language models to search the
+web and condense what they find. RU22Fact \citep{zeng2024ru22fact} does this for 16,033 fact-checked claims about the
+Russia--Ukraine conflict in four languages, and reports that such optimised evidence improves verification.
+
+A dataset of this kind can teach a shortcut. Work on natural language inference showed that hypothesis-only models
+beat the majority baseline on many datasets \citep{poliak2018hypothesis,gururangan2018annotation}, and on FEVER
+claim-only classifiers performed competitively with evidence-aware models \citep{schuster2019debiasing}. When the
+evidence itself is produced by a tool, the tool's habits can leave marks that differ by label. If evidence for true
+claims is formatted differently from evidence for false ones, a model can read the format instead of the content.
+
+We measure this on RU22Fact. Our questions are: (1) How much of the label can be predicted from the evidence's format
+alone? (2) Does removing the format marks reduce the score of a model that reads the evidence? (3) Does the evidence
+state the verdict? (4) How do these effects differ across the four languages? The models are deliberately simple
+and transparent, because the point is to audit the data, not to propose a verifier.
+
+\section{Related work}
+
+Hypothesis-only and claim-only baselines are the standard tool for finding label cues in one input
+\citep{poliak2018hypothesis,gururangan2018annotation,schuster2019debiasing}. Our format-only probe applies the same
+idea to the evidence, with features that carry no words at all. X-FACT \citep{gupta2021xfact} introduced multilingual
+fact-checking with zero-shot transfer across languages; we report transfer from English for comparison. Selective
+classification \citep{geifman2017selective} lets a model abstain on its least confident inputs; we report
+risk-coverage results because a verifier for conflict claims should be able to say it does not know.
+
+\section{Data and method}
+
+\paragraph{Data.} RU22Fact \citep{zeng2024ru22fact} provides train, validation and test splits with the labels
+Supported, Refuted and NEI (not enough information), the claim, the LLM-optimised evidence and a reference explanation.
+We use the files at commit \code{c467abb} of the authors' repository and check their SHA-256 digests. Two rows
+(one in train and one in test) have shifted columns and no language and are dropped, leaving 16,031 claims. The test
+split has 1,741 English, 704 Ukrainian, 465 Russian and 305 Chinese claims; Ukrainian and Russian have no NEI claims.
+The reference explanation states the verdict and is never used as input.
+
+\paragraph{Models.} For each input (claim, evidence, claim and evidence) we fit a character 2--5-gram TF-IDF model with
+class-balanced logistic regression, choose $C \in \{0.3, 1, 3\}$ on validation macro-F1 and score the test split once.
+Character n-grams work for all four scripts without language-specific tools.
+
+\paragraph{Format-only probe.} A logistic regression on six features of the evidence that contain no words: whether it
+mentions the search engine (Bing, whose greeting appears in many evidence texts), whether it starts with a
+\code{[1]} citation marker or with list numbering, its log length, and its shares of Latin letters and digits, with
+language indicators and their interactions with the first four features.
+
+\paragraph{Artefact removal.} We delete sentences that mention the search engine, citation markers such as
+\code{[1]:}, list numbering and markdown emphasis, and refit the evidence model and the probe with $C=1$ (the value
+selected for raw evidence). A second variant also keeps only the first 300 characters, to remove most of the length
+difference.
+
+\paragraph{Verdict words.} For each language, a short list of words with which fact-checkers state a verdict
+(for example \textit{false}, \textit{misleading} and \textit{no evidence} in English, \textit{fake},
+\textit{untrue} and \textit{refuted} in Ukrainian and Russian), and the share of evidence texts containing one.
+
+\paragraph{Metrics.} Macro-F1 over the three labels is the main metric because NEI is rare; per language it is taken
+over the labels present. Test intervals are 95\% percentile bootstrap intervals over claims (1,000 resamples). For
+abstention we rank claims by the top predicted probability and report accuracy on the most confident 50\% and 80\%
+and the area under the risk-coverage curve (AURC; lower is better).
+
+\section{Results}
+
+\begin{table}[t]
+\centering\small
+\caption{Test macro-F1 overall (95\% bootstrap interval) and per language. Per-language scores for Ukrainian and
+Russian are over Supported and Refuted only.}
+\label{tab:main}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\toprule
+Input & Overall & en & uk & ru & zh \\
+\midrule
+Majority class (Supported) & 0.268 & & & & \\
+Claim & 0.614 [0.594, 0.633] & 0.584 & 0.868 & 0.950 & 0.572 \\
+Evidence & 0.677 [0.655, 0.696] & 0.631 & 0.989 & 0.995 & 0.696 \\
+Claim and evidence & 0.679 [0.659, 0.698] & 0.631 & 0.989 & 0.995 & 0.713 \\
+\midrule
+Evidence format only (no words) & 0.591 [0.574, 0.609] & 0.543 & 0.944 & 0.931 & 0.352 \\
+\quad after artefact removal & 0.396 & 0.117 & 0.944 & 0.493 & 0.330 \\
+\quad after removal, first 300 characters & 0.357 & 0.046 & 0.939 & 0.463 & 0.096 \\
+\midrule
+Evidence after artefact removal & 0.678 [0.657, 0.696] & 0.630 & 0.989 & 0.971 & 0.710 \\
+\quad first 300 characters & 0.636 [0.618, 0.655] & 0.581 & 0.970 & 0.931 & 0.685 \\
+\midrule
+Claim and evidence, trained on English only & & 0.641 & 0.236 & 0.927 & 0.503 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The format predicts the label.} The claim-and-evidence model reaches 0.679 macro-F1 and 85.9\% accuracy
+(Table~\ref{tab:main}). The format-only probe, which reads no words, reaches 0.591 and 76.1\%: 79\% of the gain of the
+full model over the majority class. The marks differ sharply by label. In Russian, 94.8\% of Supported but 11.7\% of
+Refuted evidence mentions the search engine. In English, 83.2\% of Supported and 12.7\% of Refuted evidence starts
+with \code{[1]}. In Ukrainian, the median evidence is 107 characters for Supported and 2,830 for Refuted claims.
+Figure~\ref{fig:lang} shows the result per language.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.85\linewidth]{figures/fig_format_probe.pdf}
+  \caption{Test macro-F1 per language for the claim-and-evidence model, the format-only probe, and the probe after
+  artefact removal. Ukrainian and Russian are scored over Supported and Refuted.}
+  \label{fig:lang}
+\end{figure}
+
+\paragraph{Removing the marks removes the format signal, not the score.} After artefact removal the probe falls to
+0.396 overall, to 0.117 in English and to 0.493 in Russian. The evidence model, however, keeps 0.678, and 0.636 with
+only the first 300 characters. It therefore also learns from the content. In Ukrainian the probe stays at 0.944 even
+after truncation, because the short Supported texts are still shorter than 300 characters.
+
+\paragraph{The evidence states the verdict.} In Ukrainian, 77.5\% of Refuted evidence contains a debunking word,
+against 0.6\% of Supported evidence; the Refuted evidence reads like the fact-check article itself, the Supported
+evidence like a short news lead. The gap is smaller elsewhere: 29.8\% against 5.9\% in Russian, 28.6\% against 5.2\% in
+English and 9.4\% against 3.7\% in Chinese. Near-perfect scores in Ukrainian and Russian (0.989 and 0.995) thus come
+from evidence that already announces the verdict and from format, not from comparing the claim with independent
+evidence.
+
+\paragraph{Claims carry cues too.} The claim alone reaches 0.614, far above the majority class, as on FEVER
+\citep{schuster2019debiasing}. In Russian the claim alone reaches 0.950.
+
+\paragraph{NEI and abstention.} NEI is the hard class: F1 0.262 with claim and evidence, against 0.938 for Supported
+and 0.836 for Refuted. Answering only the most confident half of the test claims raises accuracy from 85.9\% to
+98.1\% (80\%: 93.2\%; AURC 0.034). Abstention works well here partly because the artefacts make many decisions easy.
+
+\paragraph{Transfer.} Trained on English only, the model scores 0.236 on Ukrainian and 0.503 on Chinese, but 0.927 on
+Russian. Character n-grams learned from English cannot read Russian; the Russian score comes from shared marks such as
+the search-engine greeting.
+
+\section{Discussion}
+
+RU22Fact is a valuable resource: it is multilingual, it covers a conflict where misinformation matters, and it was
+built transparently. Its evidence, however, was not written independently of the label. The search tool's greeting
+and citation style differ between claims later labelled true and false, and for Ukrainian the evidence for false claims
+is often the debunking text. A verifier evaluated on it can score highly without verifying anything. This does not
+make the dataset unusable; it means that results on it need controls. We suggest three: report a format-only
+baseline, report scores after removing tool artefacts, and check whether the evidence contains verdict words. All
+three are cheap and run on a laptop.
+
+For conflict-related claims in particular, a system that appears accurate because it reads the debunker's conclusion
+would fail exactly where it is needed: on new claims for which no fact-check exists yet.
+
+\section{Limitations}
+
+The models are lexical baselines; multilingual neural encoders and LLM agents may use the same cues to a different
+degree, which we have not measured. The artefact removal targets the marks we found and cannot remove all format or
+verdict signal. The verdict-word lists are short and hand-made; they show a difference between labels, not its full
+size. We rely on the released labels and do not re-verify any claim. Ukrainian and Russian have no NEI claims, so
+their scores are not comparable with English and Chinese. Results come from one seed; the bootstrap intervals cover
+sampling of test claims, not training variation.
+
+\section{Conclusion}
+
+On RU22Fact, a classifier that reads no words of the evidence reaches 79\% of the gain of a classifier that reads
+claim and evidence, and removing the format marks shows that the evidence also states the verdict, above all in
+Ukrainian. Evaluations of fact-checkers on LLM-built evidence should report format-only and artefact-removed
+baselines alongside their main scores.
+
+\section*{Code and data availability}
+
+Code, tests and the archived results are at \url{https://github.com/MHKhan50/CivIntel-AgentBench} (software:
+\href{https://doi.org/10.5281/zenodo.24370943}{doi:10.5281/zenodo.24370943}). The data are not redistributed:
+\code{civintel ru22fact-download} fetches them from the authors' repository at a pinned commit and checks their
+SHA-256 digests, and \code{civintel ru22fact-verify} reproduces every number in this paper in about 15 minutes on a
+laptop CPU.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

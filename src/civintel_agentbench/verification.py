@@ -7,6 +7,8 @@ validation split and the test split is scored once per setting.
 """
 from __future__ import annotations
 
+import re
+
 import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -126,6 +128,8 @@ def run_verification(data: pd.DataFrame, seed: int = 0, bootstrap: int = 1000) -
     pred = model.predict(text(test))
     results["english_only_claim+evidence"] = {"C": c, "per_language": per_language(test, pred)}
     results["format_only"] = run_format_probe(data, seed=seed, bootstrap=bootstrap)
+    results["artefact_control"] = run_artefact_control(data, seed=seed, bootstrap=bootstrap)
+    results["verdict_cues"] = verdict_cue_rates(data)
     return results
 
 
@@ -147,6 +151,14 @@ def results_table(results: dict) -> str:
     rows.append("| evidence format only (no words) | {:.3f} [{:.3f}, {:.3f}] | {:.3f} | {} | |".format(
         f["macro_f1"], f["macro_f1_ci95"][0], f["macro_f1_ci95"][1], f["accuracy"],
         " | ".join("{:.3f}".format(f["per_language"][k]["macro_f1"]) for k in ("en", "uk", "ru", "zh"))))
+    for name, label in (("cleaned", "evidence, artefacts removed"), ("cleaned_first_300", "evidence, artefacts removed, first 300 characters")):
+        a = results["artefact_control"][name]
+        rows.append("| {} | {:.3f} [{:.3f}, {:.3f}] | | {} | |".format(
+            label, a["evidence_macro_f1"], a["evidence_macro_f1_ci95"][0], a["evidence_macro_f1_ci95"][1],
+            " | ".join("{:.3f}".format(a["evidence_per_language"][k]["macro_f1"]) for k in ("en", "uk", "ru", "zh"))))
+        rows.append("| format only, {} | {:.3f} | | {} | |".format(
+            label, a["format_only_macro_f1"],
+            " | ".join("{:.3f}".format(a["format_only_per_language"][k]["macro_f1"]) for k in ("en", "uk", "ru", "zh"))))
     x = results["english_only_claim+evidence"]["per_language"]
     rows.append("| claim+evidence, trained on English only | | | {} | |".format(
         " | ".join("{:.3f}".format(x[k]["macro_f1"]) for k in ("en", "uk", "ru", "zh"))))
@@ -199,3 +211,69 @@ def run_format_probe(data: pd.DataFrame, seed: int = 0, bootstrap: int = 1000) -
         "per_language": per_language(test, pred),
         "feature_rates_by_label": rates,
     }
+
+
+_CITATION = re.compile(r"\[\^?\d+\^?\]:?")
+_NUMBERING = re.compile(r"(^|\n)\s*\d+[.)]\s+")
+_SENTENCE = re.compile(r"(?<=[.!?。！？])\s+")
+
+
+def clean_evidence(text: str, max_chars: int | None = None) -> str:
+    """Remove formatting artefacts: sentences that mention the search engine, citation markers,
+    list numbering and markdown emphasis; optionally keep only the first ``max_chars`` characters."""
+    text = str(text).replace("**", " ")
+    text = _CITATION.sub(" ", text)
+    text = _NUMBERING.sub(" ", text)
+    text = " ".join(s for s in _SENTENCE.split(text) if "Bing" not in s)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:max_chars] if max_chars else text
+
+
+ARTEFACT_VARIANTS = {"raw": None, "cleaned": 0, "cleaned_first_300": 300}
+
+
+def run_artefact_control(data: pd.DataFrame, seed: int = 0, bootstrap: int = 1000) -> dict:
+    """Evidence-only and format-only models on raw evidence and on evidence with artefacts removed.
+
+    C is fixed at 1.0 (the value selected on validation for the raw inputs) so that the variants
+    differ only in the evidence text.
+    """
+    out = {}
+    for name, cap in ARTEFACT_VARIANTS.items():
+        frame = data.copy()
+        if cap is not None:
+            frame["evidence"] = frame["evidence"].map(lambda t: clean_evidence(t, cap or None))
+        train = frame[frame["split"] == "train"]
+        test = frame[frame["split"] == "test"]
+        model = make_model(1.0, seed).fit(train["evidence"], train["label"])
+        pred = model.predict(test["evidence"])
+        probe = run_format_probe(frame, seed=seed, bootstrap=bootstrap)
+        out[name] = {
+            "median_chars": int(test["evidence"].str.len().median()),
+            "evidence_macro_f1": macro_f1(test["label"], pred),
+            "evidence_macro_f1_ci95": bootstrap_ci(test["label"], pred, n=bootstrap, seed=seed),
+            "evidence_per_language": per_language(test, pred),
+            "format_only_macro_f1": probe["macro_f1"],
+            "format_only_per_language": probe["per_language"],
+        }
+    return out
+
+
+# Words with which fact-checkers state a verdict, per language (a small, transparent list).
+VERDICT_CUES = {
+    "en": r"\b(?:false|misleading|fake|no evidence|debunk|fact.check)",
+    "uk": r"(?:фейк|неправд|не відповідає|спростов|маніпуляц)",
+    "ru": r"(?:фейк|неправд|ложн|не соответству|опроверг|манипуляц)",
+    "zh": r"(?:假|不实|谣言|误导|错误)",
+}
+
+
+def verdict_cue_rates(data: pd.DataFrame) -> dict:
+    """Share of evidence texts per language and label that contain a verdict word."""
+    out = {}
+    for lang, pattern in VERDICT_CUES.items():
+        group = data[data["lang"] == lang]
+        hits = group["evidence"].str.contains(pattern, case=False, regex=True)
+        out[lang] = {label: round(float(hits[group["label"] == label].mean()), 3)
+                     for label in LABELS if (group["label"] == label).any()}
+    return out
